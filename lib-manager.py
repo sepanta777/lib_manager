@@ -1,90 +1,105 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 
 file_path = r"e:\python\libs.csv"
-libs = []
+books = []
 
-# Load libs from file
 try:
-    with open(file_path, "r") as database:
+    with open(file_path, "r", encoding="utf-8") as database:
         for line in database:
             if line.strip():
-                libs.append(line.strip())
+                parts = line.strip().split(",")
+                if len(parts) == 4:
+                    books.append(parts)
 except FileNotFoundError:
     pass
 
 
-def show_libs():
-    listbox.delete(0, tk.END)
-    for lib in libs:
-        listbox.insert(tk.END, lib)
+def show_books():
+    tree.delete(*tree.get_children())
+    for book in books:
+        tree.insert("", tk.END, values=book)
 
 
-def add_lib():
-    lib_name = entry.get().strip()
-    if lib_name:
-        libs.append(lib_name)
-        entry.delete(0, tk.END)
-        show_libs()
-        save_libs()
-    else:
-        messagebox.showwarning("Warning", "Please enter a lib name.")
+def add_book():
+    title = entry_title.get().strip()
+    price = entry_price.get().strip()
+    writer = entry_writer.get().strip()
+    write_date = entry_write_date.get().strip()
+
+    if not (title and price and writer and write_date):
+        messagebox.showwarning("Warning", "Please fill all fields.")
+        return
+
+    books.append([title, price, writer, write_date])
+
+    entry_title.delete(0, tk.END)
+    entry_price.delete(0, tk.END)
+    entry_writer.delete(0, tk.END)
+    entry_write_date.delete(0, tk.END)
+
+    show_books()
+    save_books()
 
 
-def delete_lib():
-    if libs:
-        selection = listbox.curselection()
-        if selection:
-            idx = selection[0]
-            del libs[idx]
-            show_libs()
-            save_libs()
-        else:
-            messagebox.showwarning("Warning", "Please select a lib to delete.")
-    else:
-        messagebox.showwarning("Warning", "No libs to delete.")
+def delete_book():
+    selection = tree.selection()
+    if not selection:
+        messagebox.showwarning("Warning", "Select an item to delete.")
+        return
+
+    index = tree.index(selection[0])
+    del books[index]
+
+    show_books()
+    save_books()
 
 
-def save_libs():
-    with open(file_path, "w") as cnf:
-        for lib in libs:
-            cnf.write(lib + "\n")
+def save_books():
+    with open(file_path, "w", encoding="utf-8") as cnf:
+        for book in books:
+            cnf.write(",".join(book) + "\n")
 
 
-def quit_app():
-    save_libs()
-    root.quit()
-
-
-# Create main window
 root = tk.Tk()
-root.title("Libs Manager")
+root.title("Books Manager")
 
-# Listbox for showing libs
-listbox = tk.Listbox(root, height=10, width=50)
-listbox.pack(pady=10)
+columns = ("title", "price", "writer", "write_date")
+tree = ttk.Treeview(root, columns=columns, show="headings", height=12)
+tree.heading("title", text="Book Title")
+tree.heading("price", text="Book Price")
+tree.heading("writer", text="Writer")
+tree.heading("write_date", text="Write Date")
+tree.pack(pady=10)
 
-# Entry for adding lib
-entry = tk.Entry(root, width=50)
-entry.pack(pady=5)
+entry_frame = tk.Frame(root)
+entry_frame.pack(pady=10)
 
-# Buttons
+tk.Label(entry_frame, text="Book Title:").grid(row=0, column=0, padx=5)
+entry_title = tk.Entry(entry_frame, width=25)
+entry_title.grid(row=0, column=1, padx=5)
+
+tk.Label(entry_frame, text="Book Price:").grid(row=1, column=0, padx=5)
+entry_price = tk.Entry(entry_frame, width=25)
+entry_price.grid(row=1, column=1, padx=5)
+
+tk.Label(entry_frame, text="Writer:").grid(row=2, column=0, padx=5)
+entry_writer = tk.Entry(entry_frame, width=25)
+entry_writer.grid(row=2, column=1, padx=5)
+
+tk.Label(entry_frame, text="Write Date:").grid(row=3, column=0, padx=5)
+entry_write_date = tk.Entry(entry_frame, width=25)
+entry_write_date.grid(row=3, column=1, padx=5)
+
 button_frame = tk.Frame(root)
-button_frame.pack(pady=10)
+button_frame.pack(pady=12)
 
-show_btn = tk.Button(button_frame, text="Show Libs", command=show_libs)
-show_btn.pack(side=tk.LEFT, padx=5)
-
-add_btn = tk.Button(button_frame, text="Add Lib", command=add_lib)
+add_btn = tk.Button(button_frame, text="Add Book", command=add_book)
 add_btn.pack(side=tk.LEFT, padx=5)
 
-delete_btn = tk.Button(button_frame, text="Delete Lib", command=delete_lib)
+delete_btn = tk.Button(button_frame, text="Delete Book", command=delete_book)
 delete_btn.pack(side=tk.LEFT, padx=5)
 
-quit_btn = tk.Button(button_frame, text="Quit", command=quit_app)
-quit_btn.pack(side=tk.LEFT, padx=5)
-
-# Initial show
-show_libs()
+show_books()
 
 root.mainloop()
